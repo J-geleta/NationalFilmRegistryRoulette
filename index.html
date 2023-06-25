@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display+SC:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            font-family: 'Playfair Display SC', serif;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            margin: 0; 
+        }
+
+        #content-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100% - 68px);
+            padding-top: 88px; 
+        }
+
+        #movie-info {
+            background-color: white;
+            max-width: 350px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            display: none; /* initially hidden */
+        }
+
+        #movie-info h2, p, h3 {
+            margin-bottom: 10px;
+        }
+
+        #movie-info img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        #streaming-info {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul li {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+          button {
+            font-family: 'Playfair Display SC', serif;
+            font-size: 20px;
+            padding: 10px 20px; 
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 50px;
+            margin: 20px 0 40px 0;
+        }
+        button:hover {
+            background-color: #444;
+        }
+
+        #film-reel {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+        }
+
+        #intro-box {
+            background-color: white;
+            max-width: 350px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+        }
+
+        #retry-button {
+            display: none;
+          padding: 20px 40px;
+        }
+         @media screen and (max-width: 768px) {
+            #movie-info, #intro-box {
+                max-width: 90%;
+            }
+        }
+    </style>
+    <script>
+        async function fetchMovie() {
+
+
+          // Hide the movie information and retry button
+            document.getElementById('movie-info').style.display = 'none';
+            document.getElementById('retry-button').style.display = 'none';
+            // Hide the intro box and button
+            document.getElementById('intro-box').style.display = 'none';
+
+            // Show the spinning film reel
+            document.getElementById('film-reel').style.display = 'block';
+
+            // Fetch a random movie from server
+            const response = await fetch('/movies');
+            if (!response.ok) {
+                console.error('Server response was not ok');
+                return;
+            }
+            const movie = await response.json();
+
+            // Clear out the old info
+            const movieInfo = document.getElementById('movie-info');
+            movieInfo.innerHTML = '';
+
+            // Add the movie title and year only if year info is available
+            if (movie.year) {
+                const title = document.createElement('h2');
+                title.textContent = `${movie.title} (${movie.year})`;
+                movieInfo.appendChild(title);
+            } else {
+                const title = document.createElement('h2');
+                title.textContent = `${movie.title}`;
+                movieInfo.appendChild(title);
+            }
+
+            // Add the movie poster
+            if (movie.poster_path) {
+                const poster = document.createElement('img');
+                poster.src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+                poster.alt = `${movie.title} poster`;
+                movieInfo.appendChild(poster);
+            }
+
+            // Add the movie director
+            const director = document.createElement('p');
+            director.textContent = `Director: ${movie.director}`;
+            movieInfo.appendChild(director);
+
+            // Add the movie tagline or a default message if not available
+            const tagline = document.createElement('p');
+            tagline.textContent = movie.tagline ? `Tagline: ${movie.tagline}` : 'Tagline: Information not available.';
+            movieInfo.appendChild(tagline);
+
+            // Add the movie overview
+            const overview = document.createElement('p');
+            overview.textContent = `Overview: ${movie.overview}`;
+            movieInfo.appendChild(overview);
+
+            // Add header for streaming availability
+            const streamingHeader = document.createElement('h3');
+            streamingHeader.textContent = "Streaming Availability";
+            movieInfo.appendChild(streamingHeader);
+
+            // List the movie watch providers or a default message if not available
+            if (movie.providers && movie.providers.flatrate) {
+                const providerList = document.createElement('ul');
+                for (const provider of movie.providers.flatrate) {
+                    const providerItem = document.createElement('li');
+                    providerItem.textContent = provider.provider_name;
+                    providerList.appendChild(providerItem);
+                }
+                movieInfo.appendChild(providerList);
+            } else {
+                const noProviderInfo = document.createElement('p');
+                noProviderInfo.textContent = 'Streaming information is not available.';
+                movieInfo.appendChild(noProviderInfo);
+            }
+
+            // Wait for 2 seconds to show the spinning film reel
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Hide the spinning film reel and show the movie info
+            document.getElementById('film-reel').style.display = 'none';
+            document.getElementById('movie-info').style.display = 'block';
+
+            // Show the retry button
+            document.getElementById('retry-button').style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <h1 role="banner">National Film Registry Movie Roulette</h1>
+    <div id="content-container" role="main">
+        <div id="intro-box">
+            <p>Want to break your routine? Tired of streaming the same shows over and over? This site will help you discover new movies to stream from the Library of Congress's National Film Registry of historically significant films! All movie data is sourced from TMDB movie data API.</p>
+            <button id="roulette-button" onclick="fetchMovie()" role="button" aria-pressed="false" aria-label="Show me a movie!">Show me a movie!</button>
+        </div>
+        <div id="movie-info" role="region" aria-live="polite"></div>
+        <img id="film-reel" src="film-reel.gif" alt="Film Reel Spinning" role="img">
+        <button id="retry-button" onclick="fetchMovie()" style="display: none;" role="button" aria-pressed="false" aria-label="Try another movie!">Discover another movie!</button>
+    </div>
+</body>
+</html>
+
